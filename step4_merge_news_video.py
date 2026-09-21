@@ -71,8 +71,19 @@ def clean_caption_text(text):
     return re.sub(r'\s+', ' ', cleaned).strip()
 
 
-def bake_scene_frame(img_path, badge="🔴 BREAKING NEWS", headline="", caption="", output_path=None):
-    """Pre-composites the entire scene (image + header + caption) into a single high-quality frame in Pillow."""
+import textwrap
+
+def get_english_font(size=26):
+    imp_font = FONTS_DIR / "impact.ttf"
+    if imp_font.exists():
+        try:
+            return ImageFont.truetype(str(imp_font), size)
+        except Exception:
+            pass
+    return ImageFont.load_default()
+
+def bake_scene_frame(img_path, badge="बड़ी खबर", headline="", caption="", output_path=None):
+    """Pre-composites the entire scene (image + header + caption) into a broadcast TV news frame in Pillow."""
     if not img_path.exists():
         canvas = Image.new("RGB", (TARGET_W, TARGET_H), color=(15, 20, 28))
     else:
@@ -82,28 +93,57 @@ def bake_scene_frame(img_path, badge="🔴 BREAKING NEWS", headline="", caption=
 
     draw = ImageDraw.Draw(canvas, "RGBA")
 
-    # 1. Top Red News Bar
-    bar_y1 = 80
-    bar_y2 = 150
-    draw.rectangle([0, bar_y1, TARGET_W, bar_y2], fill=(210, 15, 25, 245))
+    # 1. Top Badges Row (y=65 to y=122)
+    font_badge = get_font(30)
+    badge_clean = clean_caption_text(badge) or "बड़ी खबर"
+    b_box = draw.textbbox((0, 0), badge_clean, font=font_badge)
+    b_w = b_box[2] - b_box[0]
+    badge_pill_w = b_w + 65
 
-    font_badge = get_font(34)
-    badge_clean = clean_caption_text(badge) or "BREAKING NEWS"
-    draw.text((40, bar_y1 + 16), f"🔴 {badge_clean.upper()}", font=font_badge, fill="#FFFFFF")
+    # Left Red Pill with Live glowing dot (pure vector geometry, zero emoji boxes!)
+    draw.rounded_rectangle([40, 65, 40 + badge_pill_w, 122], radius=10, fill=(225, 20, 30, 245))
+    draw.ellipse([54, 84, 72, 102], fill=(255, 255, 255))
+    draw.ellipse([58, 88, 68, 98], fill=(225, 20, 30))
+    draw.text((82, 75), badge_clean, font=font_badge, fill="#FFFFFF")
 
-    tag_font = get_font(26)
-    draw.text((TARGET_W - 240, bar_y1 + 20), "FastNews AI", font=tag_font, fill="#FFE600")
+    # Right Channel Tag Pill (English font - zero boxes!)
+    tag_font = get_english_font(26)
+    tag_text = "FASTNEWS AI"
+    t_box = draw.textbbox((0, 0), tag_text, font=tag_font)
+    t_w = t_box[2] - t_box[0]
+    tag_pill_w = t_w + 30
+    draw.rounded_rectangle([TARGET_W - 40 - tag_pill_w, 65, TARGET_W - 40, 122], radius=10,
+                           fill=(10, 14, 22, 230), outline="#FFE600", width=2)
+    draw.text((TARGET_W - 40 - tag_pill_w + 15, 78), tag_text, font=tag_font, fill="#FFE600")
 
-    # 2. Sub-Headline Dark Bar
+    # 2. Hero Headline Card (y=135)
     if headline:
         head_clean = clean_caption_text(headline)
-        sub_y1 = bar_y2
-        sub_y2 = sub_y1 + 75
-        draw.rectangle([0, sub_y1, TARGET_W, sub_y2], fill=(12, 16, 24, 225))
-        font_head = get_font(30)
-        draw.text((40, sub_y1 + 16), head_clean[:48], font=font_head, fill="#FFF275")
+        font_head = get_font(40)
+        lines = textwrap.wrap(head_clean, width=32)
+        if not lines:
+            lines = [head_clean]
 
-    # 3. TV Style Bottom Caption
+        line_h = 52
+        head_card_h = len(lines) * line_h + 28
+        h_y1 = 135
+        h_y2 = h_y1 + head_card_h
+        h_x1 = 40
+        h_x2 = TARGET_W - 40
+
+        # Background card with deep glass aesthetic & gold border
+        draw.rounded_rectangle([h_x1, h_y1, h_x2, h_y2], radius=14,
+                               fill=(8, 12, 20, 240), outline="#FFE600", width=3)
+        # Left red accent stripe
+        draw.rounded_rectangle([h_x1, h_y1, h_x1 + 10, h_y2], radius=4, fill=(230, 25, 35, 255))
+
+        # Render each headline line in full without cut-off
+        for i, line in enumerate(lines):
+            ly = h_y1 + 14 + i * line_h
+            draw.text((h_x1 + 28, ly), line, font=font_head, fill="#FFFFFF",
+                      stroke_width=2, stroke_fill="black")
+
+    # 3. TV Style Bottom Caption (y=1420)
     if caption:
         cap_clean = clean_caption_text(caption)
         font_cap = get_font(42)
@@ -115,7 +155,7 @@ def bake_scene_frame(img_path, badge="🔴 BREAKING NEWS", headline="", caption=
         box_w = min(t_w + pad_x * 2, TARGET_W - 80)
         box_h = t_h + pad_y * 2
         box_x1 = (TARGET_W - box_w) // 2
-        box_y1 = 1380
+        box_y1 = 1420
         box_x2 = box_x1 + box_w
         box_y2 = box_y1 + box_h
 
