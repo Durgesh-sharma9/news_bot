@@ -33,28 +33,22 @@ WEB_API_URL = config.get("web_api_url", "http://localhost:3000/api/news")
 
 def upload_to_imagekit(image_path, file_name):
     """Uploads an image to ImageKit.io CDN."""
-    if not (IMAGEKIT_PUBLIC_KEY and IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT):
+    if not IMAGEKIT_PRIVATE_KEY:
         return None
 
     try:
         from imagekitio import ImageKit
-        imagekit = ImageKit(
-            public_key=IMAGEKIT_PUBLIC_KEY,
-            private_key=IMAGEKIT_PRIVATE_KEY,
-            url_endpoint=IMAGEKIT_URL_ENDPOINT
-        )
+        imagekit = ImageKit(private_key=IMAGEKIT_PRIVATE_KEY)
 
         with open(image_path, "rb") as img:
-            upload = imagekit.upload_file(
+            upload = imagekit.files.upload(
                 file=img,
                 file_name=file_name,
-                options={
-                    "folder": "/newskid_cards/",
-                    "use_unique_file_name": True,
-                    "tags": ["newskid", "breaking_news"]
-                }
+                folder="/newskid_cards/",
+                use_unique_file_name=True,
+                tags=["newskid", "breaking_news"]
             )
-            return upload.response_metadata.raw.get("url")
+            return getattr(upload, "url", None)
     except Exception as e:
         print(f"  ⚠️ ImageKit Upload warning: {e}")
         return None
