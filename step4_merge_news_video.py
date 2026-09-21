@@ -115,12 +115,12 @@ def bake_scene_frame(img_path, badge="बड़ी खबर", headline="", capt
     badge_clean = clean_caption_text(badge) or "बड़ी खबर"
     draw.text((75, bar_y1 + 14), badge_clean.upper(), font=font_badge, fill="#FFFFFF")
 
-    # Right Channel Name Tab: Gold electric text
-    font_tag = get_english_font(30)
-    tag_text = "FASTNEWS AI  |  SPECIAL REPORT"
+    # Right Channel Name Tab: Bold Gold text for NEWS KID
+    font_tag = get_english_font(34)
+    tag_text = "NEWS KID"
     t_box = draw.textbbox((0, 0), tag_text, font=font_tag)
     tw = t_box[2] - t_box[0]
-    draw.text((TARGET_W - tw - 40, bar_y1 + 17), tag_text, font=font_tag, fill="#FFE600")
+    draw.text((TARGET_W - tw - 45, bar_y1 + 15), tag_text, font=font_tag, fill="#FFE600")
 
     # --- Headline Bar: Row 2 (Full Width Edge-to-Edge) ---
     if headline:

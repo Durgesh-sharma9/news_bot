@@ -4,6 +4,6 @@
   "pexels_api_key": "YOUR_PEXELS_KEY_HERE",
   "default_language": "hindi",
   "default_voice": "hi-IN-MadhurNeural",
-  "news_channel_name": "FastNews AI",
-  "news_ticker_badge": "🔴 BREAKING NEWS"
+  "news_channel_name": "NEWS KID",
+  "news_ticker_badge": "🔴 बड़ी खबर"
 }

@@ -63,7 +63,7 @@ def get_main_menu():
 def send_welcome(message):
     chat_id = message.chat.id
     welcome_text = (
-        "<b>📰 Welcome to FastNews AI Bot!</b>\n\n"
+        "<b>📰 Welcome to NEWS KID AI Bot!</b>\n\n"
         "Main aapke liye <b>real-time breaking news</b> ki high-retention "
         "vertical videos banata hoon (with real news photos + news anchor voice + subtitles)!\n\n"
         "👉 Niche diye gaye buttons se category select karein ya type karein:\n"
@@ -168,8 +168,8 @@ def generate_and_send_news(chat_id, topic):
         caption = (
             f"🎬 <b>{badge}</b>\n\n"
             f"📌 <b>{headline}</b>\n\n"
-            f"⚡ Generated via FastNews AI\n"
-            f"#News #BreakingNews #Shorts #India"
+            f"⚡ Generated via NEWS KID\n"
+            f"#News #BreakingNews #Shorts #India #NEWSKID"
         )
 
         with open(VIDEO_PATH, "rb") as vf:
