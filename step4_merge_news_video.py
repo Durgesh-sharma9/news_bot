@@ -162,8 +162,9 @@ def bake_scene_frame(img_path, badge="बड़ी खबर", headline="", capt
         pad_x, pad_y = 36, 16
         box_w = min(t_w + pad_x * 2, TARGET_W - 80)
         box_h = t_h + pad_y * 2
+        # Lowered to y=1580 for television lower-third placement
         box_x1 = (TARGET_W - box_w) // 2
-        box_y1 = 1420
+        box_y1 = 1580
         box_x2 = box_x1 + box_w
         box_y2 = box_y1 + box_h
 

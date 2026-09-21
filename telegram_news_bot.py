@@ -193,10 +193,15 @@ def generate_and_send_news(chat_id, topic):
 
 def start_bot():
     print("=" * 60)
-    print("🤖 FASTNEWS AI TELEGRAM BOT ACTIVE: @News998889bot")
+    print("🤖 NEWS KID AI TELEGRAM BOT ACTIVE: @News998889bot")
     print("   Mode: Local Testing (Zero Video Downloads, Fast Render)")
     print("=" * 60)
-    bot.infinity_polling(timeout=20, long_polling_timeout=20)
+    while True:
+        try:
+            bot.infinity_polling(timeout=60, long_polling_timeout=60)
+        except Exception as e:
+            print(f"⚠️ Polling note: {e}, auto-reconnecting in 3s...")
+            time.sleep(3)
 
 
 if __name__ == "__main__":
