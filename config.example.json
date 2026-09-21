@@ -1,0 +1,9 @@
+{
+  "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN_HERE",
+  "gemini_api_key": "YOUR_GEMINI_API_KEY_HERE",
+  "pexels_api_key": "YOUR_PEXELS_KEY_HERE",
+  "default_language": "hindi",
+  "default_voice": "hi-IN-MadhurNeural",
+  "news_channel_name": "FastNews AI",
+  "news_ticker_badge": "🔴 BREAKING NEWS"
+}

@@ -1,0 +1,17 @@
+# Virtualenv / Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+config.json
+
+# Generated media and temporary files
+images/
+temp_audios/
+*.mp4
+voiceover.mp3
+voiceover_timing.json
+script.json
+research.json
+telegram_chat_id.txt
