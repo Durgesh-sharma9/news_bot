@@ -71,12 +71,15 @@ def sync_card_to_web():
     category = script_data.get("category", "breaking")
     scenes = script_data.get("scenes", [])
 
-    # Combine scenes into Inshorts 60-word summary
+    # Combine scenes into Inshorts 60-word summary (excluding video-specific outro)
+    import re
     summary_parts = [s.get("voice_text", "").strip() for s in scenes if s.get("voice_text")]
     full_summary = " ".join(summary_parts)
 
-    # Clean out any trailing outro for web reading
+    # Clean out any video outro or website visit promos for web reading
     full_summary = full_summary.replace("ऐसी ही हर खबर के लिए देखते रहिए NEWS KID!", "").strip()
+    full_summary = re.sub(r'(\s*पूरी रिपोर्ट के लिए अभी विजिट करें.*?newskid\.devv\.in!?)', '', full_summary).strip()
+    full_summary = re.sub(r'(\s*विजिट करें.*?newskid\.devv\.in!?)', '', full_summary).strip()
 
     # Step 1: Upload All Real Scene Photos to ImageKit CDN for Image Gallery
     cdn_images = []
