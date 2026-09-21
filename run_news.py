@@ -51,6 +51,14 @@ def main():
     # Step 5: Sync to Web Portal (Inshorts Card)
     run_step("Step 5: Publishing News Card to Web Portal", "sync_web.py")
 
+    # Step 6: Upload Reel to Instagram (@news_kid_ig)
+    session_file = SCRIPT_DIR / "ig_session.json"
+    if session_file.exists() and "--no-ig" not in sys.argv:
+        try:
+            run_step("Step 6: Uploading Reel to Instagram (@news_kid_ig)", "step6_upload_instagram.py")
+        except Exception as e:
+            print(f"⚠️ Instagram upload warning: {e}")
+
     total_time = round(time.time() - start_time, 1)
     print("\n" + "="*55)
     print(f"🎉 PIPELINE FINISHED IN {total_time} SECONDS!")

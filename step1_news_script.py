@@ -227,26 +227,34 @@ OUTPUT STRICTLY VALID JSON ONLY (No markdown, no extra text):
 }}
 """
 
-    MODELS_TO_TRY = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.7-flash', 'gemini-3.6-flash']
+    api_keys = config.get("gemini_api_keys", [GEMINI_API_KEY])
+    if isinstance(api_keys, str):
+        api_keys = [api_keys]
+
+    MODELS_TO_TRY = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemini-3.7-flash', 'gemini-3.5-flash-lite']
     clean_text = None
 
-    for m_name in MODELS_TO_TRY:
-        try:
-            print(f"  🤖 Connecting to Gemini model: {m_name}...")
-            model = genai.GenerativeModel(m_name)
-            response = model.generate_content(prompt)
-            clean_text = response.text.strip()
-            if clean_text.startswith("```"):
-                clean_text = re.sub(r"^```(?:json)?\n?", "", clean_text)
-                clean_text = re.sub(r"\n?```$", "", clean_text)
-            clean_text = clean_text.strip()
+    for k_idx, key in enumerate(api_keys, 1):
+        genai.configure(api_key=key)
+        for m_name in MODELS_TO_TRY:
+            try:
+                print(f"  🤖 Connecting to Gemini ({m_name}) using Key #{k_idx}...")
+                model = genai.GenerativeModel(m_name)
+                response = model.generate_content(prompt)
+                clean_text = response.text.strip()
+                if clean_text.startswith("```"):
+                    clean_text = re.sub(r"^```(?:json)?\n?", "", clean_text)
+                    clean_text = re.sub(r"\n?```$", "", clean_text)
+                clean_text = clean_text.strip()
+                break
+            except Exception as e:
+                print(f"  ⚠️ Key #{k_idx} with {m_name} failed ({e}), trying next...")
+                continue
+        if clean_text:
             break
-        except Exception as e:
-            print(f"  ⚠️ {m_name} failed ({e}), trying next...")
-            continue
 
     if not clean_text:
-        print("❌ Error: Koi bhi Gemini model connect nahi ho paya.")
+        print("❌ Error: Koi bhi Gemini key ya model connect nahi ho paya.")
         sys.exit(1)
 
     script_data = json.loads(clean_text)
