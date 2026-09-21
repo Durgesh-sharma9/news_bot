@@ -48,6 +48,9 @@ def main():
     # Step 4: Render Video
     run_step("Step 4: Compositing 1080x1920 Fast News Video", "step4_merge_news_video.py")
 
+    # Step 5: Sync to Web Portal (Inshorts Card)
+    run_step("Step 5: Publishing News Card to Web Portal", "sync_web.py")
+
     total_time = round(time.time() - start_time, 1)
     print("\n" + "="*55)
     print(f"🎉 PIPELINE FINISHED IN {total_time} SECONDS!")
