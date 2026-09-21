@@ -70,26 +70,29 @@ def generate_news_script(topic="Breaking News India", category="National"):
         json.dump(research_data, f, ensure_ascii=False, indent=2)
 
     prompt = f"""
-You are a senior TV News Anchor and Inshorts lead editor.
-Create an energetic, engaging 40-50 second Hindi News Short Video Script on this topic.
+You are an expert TV Breaking News Anchor and Inshorts Chief Editor.
+Create an energetic, high-tempo 35-45 second Hindi News Short Video Script on this topic.
 
 TOPIC: {topic}
 LIVE CONTEXT / HEADLINES:
 {rss_context if rss_context else "Cover the latest factual updates on this topic."}
 
-RULES:
-1. Language: Conversational, energetic Hindi (Devanagari script) like a TV News anchor (Aaj Tak, Inshorts, NDTV).
-2. Badge: 2-3 words breaking alert (e.g. "🔴 बड़ी खबर", "🚀 टेक अपडेट", "🇮🇳 भारत का गौरव", "⚠️ चेतावनी").
-3. Exactly 4 or 5 scenes. Total voiceover duration should be ~40-45 seconds.
-4. Voice text: Clear, punchy, factual facts. No filler words.
-5. Caption text: Short 4-7 words in Devanagari Hindi for screen captions.
-6. Image query: MUST BE EXTREMELY ACCURATE for real news photos (person name, place, event, launch, building). English queries only.
-7. SFX: choose from ["boom", "camera_click", "whoosh", "ding"].
+CRITICAL RULES FOR ACCURACY & SPEED:
+1. Language: Ultra-energetic, fast-paced Hindi (Devanagari) TV anchor delivery (Aaj Tak / ABP / Inshorts style).
+2. Pacing: Direct to the point, punchy facts, no slow intros or filler phrases.
+3. Badge: 2-3 words breaking alert (e.g. "🔴 बड़ी खबर", "🚀 अंतरिक्ष मिशन", "⚡ बड़ी चेतावनी", "🇮🇳 भारत का डंका").
+4. Exactly 4 scenes. Total script should be ~100-120 words total so it speaks fast and cleanly in ~35-40 seconds.
+5. Caption text: 4-6 words punchy text in Devanagari Hindi for screen captions.
+6. image_query (SUPER IMPORTANT): MUST BE ULTRA-SPECIFIC to the REAL subject so accurate news photos are downloaded.
+   - Include the EXACT real English name of the person, leader, rocket, gadget, car, place, or organization.
+   - Example Good: "Narendra Modi addressing rally news photo", "ISRO LVM3 rocket launch Sriharikota", "Sam Altman OpenAI DevDay conference"
+   - Example Bad: "technology", "happy people", "space"
+7. SFX: choose from ["boom", "camera_click", "whoosh_deep", "ding"].
 
-OUTPUT STRICTLY VALID JSON ONLY (No markdown backticks, no other text):
+OUTPUT STRICTLY VALID JSON ONLY (No markdown, no explanation):
 {{
   "topic": "{topic}",
-  "title": "Catcy News Headline in Hindi (under 60 chars)",
+  "title": "Short Punchy Hindi Headline (under 55 chars)",
   "badge": "🔴 बड़ी खबर",
   "category": "{category}",
   "scenes": [

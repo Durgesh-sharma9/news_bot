@@ -26,7 +26,8 @@ DEFAULT_VOICE = "hi-IN-MadhurNeural"  # Professional Hindi News Anchor
 async def generate_scene_audio(text, voice, output_path):
     for attempt in range(3):
         try:
-            communicate = edge_tts.Communicate(text, voice, rate="+5%", pitch="+0Hz")
+            # Fast, crisp, high-energy news anchor cadence (+12% rate, +1Hz pitch)
+            communicate = edge_tts.Communicate(text, voice, rate="+12%", pitch="+1Hz")
             await communicate.save(str(output_path))
             return
         except Exception as e:
