@@ -42,6 +42,31 @@ CATEGORY_FEEDS = {
 }
 
 
+ANCHOR_STATE_FILE = SCRIPT_DIR / "last_anchor.json"
+
+
+def get_next_anchor_gender():
+    """Strictly alternates between 'male' (Young Boy) and 'female' (Young Girl) every single video."""
+    last_gender = "female"
+    if ANCHOR_STATE_FILE.exists():
+        try:
+            with open(ANCHOR_STATE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                last_gender = data.get("last_gender", "female")
+        except Exception:
+            pass
+
+    next_gender = "male" if last_gender == "female" else "female"
+
+    try:
+        with open(ANCHOR_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump({"last_gender": next_gender}, f, indent=2)
+    except Exception:
+        pass
+
+    return next_gender
+
+
 def load_used_news():
     if USED_NEWS_FILE.exists():
         try:
@@ -130,22 +155,29 @@ def generate_news_script(topic="breaking", category="breaking"):
     print(f"   👉 \"{headline}\"")
     print(f"   ℹ️ Context: {details[:120]}...\n")
 
-    # Alternate or pick gender dynamically
-    voice_gender = random.choice(["female", "male"])
-    print(f"🎙️ Selected Anchor Gender: {voice_gender.upper()} ({'Swara' if voice_gender == 'female' else 'Madhur'})")
+    # Strictly alternate between Boy and Girl anchor on each video
+    voice_gender = get_next_anchor_gender()
+    anchor_title = "Cute & Soft Boy Anchor (स्मार्ट किड रिपोर्टर - Madhur)" if voice_gender == "male" else "Cute & Soft Girl Anchor (क्यूट किड रिपोर्टर - Swara)"
+    print(f"🎙️ Selected Anchor: {voice_gender.upper()} -> {anchor_title}")
+
+    if voice_gender == "male":
+        anchor_persona = f"You are a cute, smart, and soft-spoken Young Boy News Anchor (Boy Reporter) hosting '{CHANNEL_NAME}'."
+    else:
+        anchor_persona = f"You are a cute, sweet, and soft-spoken Young Girl News Anchor (Girl Reporter) hosting '{CHANNEL_NAME}'."
 
     research_data = {
         "story_headline": headline,
         "story_context": details,
         "category": category,
-        "voice_gender": voice_gender
+        "voice_gender": voice_gender,
+        "anchor_title": anchor_title
     }
     with open(RESEARCH_FILE, "w", encoding="utf-8") as f:
         json.dump(research_data, f, ensure_ascii=False, indent=2)
 
     prompt = f"""
-You are a cute, smart, and soft-spoken Young News Anchor hosting '{CHANNEL_NAME}'.
-Your persona is sweet, polite, curious, and engaging—explaining real breaking news clearly and delightfully for young viewers and adults alike!
+{anchor_persona}
+Your persona is polite, curious, and engaging—explaining real breaking news clearly and delightfully for young viewers and adults alike!
 Create a tight, crisp, high-impact 35-42 second Hindi News Video Script on THIS ONE SINGLE BREAKING STORY. Total video duration MUST NOT exceed 45 seconds!
 
 STORY HEADLINE: {headline}
