@@ -144,21 +144,22 @@ def generate_news_script(topic="breaking", category="breaking"):
         json.dump(research_data, f, ensure_ascii=False, indent=2)
 
     prompt = f"""
-You are the Lead News Anchor of the national TV news channel '{CHANNEL_NAME}'.
-Create an intense, fast-paced, high-impact 35-42 second Hindi News Video Script on THIS ONE SINGLE BREAKING STORY.
+You are an energetic, smart Young News Anchor (Young Boy / Girl Prodigy Reporter) hosting '{CHANNEL_NAME}'.
+Your persona is sharp, fast-talking, curious, and confident—explaining serious, real breaking news with high energy and crystal clarity!
+Create an intense, fast-paced, high-impact 32-38 second Hindi News Video Script on THIS ONE SINGLE BREAKING STORY.
 
 STORY HEADLINE: {headline}
 CONTEXT / FACTS: {details}
 
-STRICT INSHORTS RULES:
+STRICT INSHORTS & NEWS KID RULES:
 1. Cover ONLY THIS SINGLE NEWS STORY. Do not mix any other news.
 2. ABSOLUTE FORBIDDEN RULE: NEVER mention, speak, or write the name of any other news channel, brand, app, or agency (NEVER say or write Aaj Tak, NDTV, BBC, Inshorts, ABP, Zee, News18, ANI, PTI, etc.). If you mention any channel name, ONLY use '{CHANNEL_NAME}'.
-3. Tone: Real TV News Anchor (energetic, crisp, dramatic, fast cadence).
-4. Exactly 4 scenes (total duration ~35-40 seconds, ~110 words total):
-   - Scene 1: The big breaking revelation / What just happened.
-   - Scene 2: Exact key statement, facts, numbers, or person involved.
+3. Tone: Fast Young News Anchor (energetic, confident kid reporter delivery, crisp Hindi words).
+4. Exactly 4 scenes (total duration ~32-38 seconds, ~95-105 words total):
+   - Scene 1: Young anchor hook / What just happened ("NEWS KID par badi khabar...").
+   - Scene 2: Key facts, numbers, statements, or people involved.
    - Scene 3: Ground impact / Public or official reaction.
-   - Scene 4: Future consequence / Final takeaway.
+   - Scene 4: Future takeaway / Final thoughtful question.
 5. Caption text: Short 4-6 words in Devanagari Hindi for TV screen ticker.
 6. image_query (SUPER IMPORTANT): MUST BE THE EXACT REAL ENGLISH NAME of the main person, organization, building, rocket, court, or city in this specific news story so real-life news press photos are downloaded.
    - Examples: "Narendra Modi speech", "Supreme Court of India New Delhi", "Donald Trump press conference", "ISRO rocket launch"

@@ -21,8 +21,8 @@ TEMP_DIR = SCRIPT_DIR / "temp_audios"
 TEMP_DIR.mkdir(exist_ok=True)
 
 VOICE_MAP = {
-    "female": {"voice": "hi-IN-SwaraNeural", "rate": "+14%", "pitch": "+1Hz"},
-    "male":   {"voice": "hi-IN-MadhurNeural", "rate": "+14%", "pitch": "+0Hz"}
+    "female": {"voice": "hi-IN-SwaraNeural", "rate": "+13%", "pitch": "+16Hz", "label": "Young Girl Anchor"},
+    "male":   {"voice": "hi-IN-MadhurNeural", "rate": "+13%", "pitch": "+20Hz", "label": "Young Boy Anchor"}
 }
 
 
@@ -63,7 +63,7 @@ def create_voiceover(gender_override=None):
         gender = "female"
     voice_conf = VOICE_MAP[gender]
 
-    print(f"  👩‍💼 Anchor Voice: {voice_conf['voice']} ({gender.upper()}) | Rate: {voice_conf['rate']}\n")
+    print(f"  🎙️ Anchor Voice: {voice_conf['voice']} ({voice_conf.get('label', gender.upper())}) | Rate: {voice_conf['rate']} | Pitch: {voice_conf['pitch']}\n")
 
     scenes = script_data.get("scenes", [])
     if not scenes:
