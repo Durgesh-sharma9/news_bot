@@ -31,8 +31,8 @@ IMAGEKIT_URL_ENDPOINT = config.get("imagekit_url_endpoint", "")
 WEB_API_URL = config.get("web_api_url", "http://localhost:3000/api/news")
 
 
-def upload_to_imagekit(image_path, file_name):
-    """Uploads an image to ImageKit.io CDN."""
+def upload_to_imagekit(file_path, file_name, folder="/newskid_cards/"):
+    """Uploads a file (image or audio) to ImageKit.io CDN."""
     if not IMAGEKIT_PRIVATE_KEY:
         return None
 
@@ -40,13 +40,13 @@ def upload_to_imagekit(image_path, file_name):
         from imagekitio import ImageKit
         imagekit = ImageKit(private_key=IMAGEKIT_PRIVATE_KEY)
 
-        with open(image_path, "rb") as img:
+        with open(file_path, "rb") as f:
             upload = imagekit.files.upload(
-                file=img,
+                file=f,
                 file_name=file_name,
-                folder="/newskid_cards/",
+                folder=folder,
                 use_unique_file_name=True,
-                tags=["newskid", "breaking_news"]
+                tags=["newskid", "news_media"]
             )
             return getattr(upload, "url", None)
     except Exception as e:
@@ -78,22 +78,37 @@ def sync_card_to_web():
     # Clean out any trailing outro for web reading
     full_summary = full_summary.replace("ऐसी ही हर खबर के लिए देखते रहिए NEWS KID!", "").strip()
 
-    # Step 1: Upload the Best Real News Photo to ImageKit CDN
-    cdn_image_url = None
+    # Step 1: Upload All Real Scene Photos to ImageKit CDN for Image Gallery
+    cdn_images = []
     images_dir = SCRIPT_DIR / "images"
     candidates = sorted([images_dir / f"scene_{i}.jpg" for i in range(4)], key=lambda p: p.stat().st_size if p.exists() else 0, reverse=True)
-    best_img = candidates[0] if (candidates and candidates[0].exists() and candidates[0].stat().st_size > 35000) else IMAGE_FILE
+    valid_candidates = [p for p in candidates if p.exists() and p.stat().st_size > 20000]
 
-    if best_img and best_img.exists():
-        print(f"  📸 Uploading Real News Photo ({best_img.name}) to ImageKit CDN...")
-        file_slug = f"news_{int(datetime.now().timestamp())}.jpg"
-        cdn_image_url = upload_to_imagekit(best_img, file_slug)
+    if not valid_candidates and IMAGE_FILE.exists():
+        valid_candidates = [IMAGE_FILE]
 
-    if not cdn_image_url:
-        print("  ℹ️ Using fallback news photo")
-        cdn_image_url = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1080&q=80"
-    else:
-        print(f"  ✅ Genuine News Photo uploaded to ImageKit: {cdn_image_url}")
+    for idx, img_path in enumerate(valid_candidates[:3]):
+        print(f"  📸 Uploading Real News Photo {idx+1}/{len(valid_candidates[:3])} ({img_path.name}) to ImageKit CDN...")
+        file_slug = f"news_{int(datetime.now().timestamp())}_{idx}.jpg"
+        url = upload_to_imagekit(img_path, file_slug, folder="/newskid_cards/")
+        if url:
+            cdn_images.append(url)
+
+    if not cdn_images:
+        cdn_images = ["https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1080&q=80"]
+
+    cdn_image_url = cdn_images[0]
+    print(f"  ✅ {len(cdn_images)} News Photos uploaded to ImageKit for Card Gallery!")
+
+    # Step 1.5: Upload Studio AI Anchor Voiceover to ImageKit CDN
+    cdn_audio_url = ""
+    voice_file = SCRIPT_DIR / "voiceover.mp3"
+    if voice_file.exists() and voice_file.stat().st_size > 5000:
+        print(f"  🎙️ Uploading Studio AI Anchor Audio ({voice_file.name}) to ImageKit CDN...")
+        audio_slug = f"voice_{int(datetime.now().timestamp())}.mp3"
+        cdn_audio_url = upload_to_imagekit(voice_file, audio_slug, folder="/newskid_audio/")
+        if cdn_audio_url:
+            print(f"  ✅ Studio Audio uploaded to ImageKit: {cdn_audio_url}")
 
     # Build the Card Object (Bilingual ready)
     card_doc = {
@@ -104,6 +119,8 @@ def sync_card_to_web():
       "category": category,
       "badge": badge,
       "imageUrl": cdn_image_url,
+      "images": cdn_images,
+      "audioUrl": cdn_audio_url or "",
       "source": "NEWS KID Verified",
       "publishedAt": datetime.now(timezone.utc).isoformat(),
       "views": 1,

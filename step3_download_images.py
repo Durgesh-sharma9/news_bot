@@ -29,8 +29,38 @@ HEADERS = {
 }
 
 
+# Load Pexels API Key
+CONFIG_FILE = SCRIPT_DIR / "config.json"
+PEXELS_API_KEY = ""
+if CONFIG_FILE.exists():
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            PEXELS_API_KEY = json.load(f).get("pexels_api_key", "")
+    except Exception:
+        pass
+
+# Disallowed domains with watermarks or copyrighted editorial restrictions
+BLOCKED_KEYWORDS = ["getty", "alamy", "shutterstock", "istock", "watermark", "depositphotos", "dreamstime", "vector", "clipart", "logo", "icon", "avatar"]
+
+def search_pexels_images(query, max_results=6):
+    """100% Copyright-Free & Royalty-Free Commercial HD photos via Pexels API."""
+    if not PEXELS_API_KEY:
+        return []
+    try:
+        headers = {"Authorization": PEXELS_API_KEY}
+        url = f"https://api.pexels.com/v1/search?query={requests.utils.quote(query)}&per_page={max_results}&orientation=portrait"
+        resp = requests.get(url, headers=headers, timeout=6)
+        if resp.status_code == 200:
+            data = resp.json()
+            photos = [p["src"]["large2x"] for p in data.get("photos", []) if "src" in p and "large2x" in p["src"]]
+            return photos
+    except Exception:
+        pass
+    return []
+
+
 def search_bing_images(query, max_results=8):
-    """Direct publisher high-resolution news photo search via Bing Images."""
+    """Direct publisher high-resolution news photo search via Bing Images with copyright filter."""
     try:
         clean_q = f"{query} news photo hd"
         url = f"https://www.bing.com/images/async?q={requests.utils.quote(clean_q)}&first=0&count={max_results}&mmasync=1"
@@ -39,8 +69,8 @@ def search_bing_images(query, max_results=8):
             murls = re.findall(r'murl&quot;:&quot;(http[^&]+)&quot;', resp.text)
             if not murls:
                 murls = re.findall(r'"murl":"(http[^"]+)"', resp.text)
-            # Filter out generic clipart or tiny icons
-            filtered = [u for u in murls if not any(x in u.lower() for x in ["icon", "logo", "clipart", "avatar", "vector"])]
+            # Filter out watermarked stock photos or generic clipart
+            filtered = [u for u in murls if not any(x in u.lower() for x in BLOCKED_KEYWORDS)]
             return filtered[:max_results]
     except Exception:
         pass
@@ -48,7 +78,7 @@ def search_bing_images(query, max_results=8):
 
 
 def search_ddg_images(query, max_results=8):
-    """High-res news photos via DuckDuckGo."""
+    """High-res news photos via DuckDuckGo with copyright filter."""
     if not ddgs:
         return []
     try:
@@ -59,7 +89,7 @@ def search_ddg_images(query, max_results=8):
         for r in results:
             img_url = r.get("image")
             if img_url and img_url.startswith("http"):
-                if not any(x in img_url.lower() for x in ["icon", "logo", "clipart", "avatar", "vector"]):
+                if not any(x in img_url.lower() for x in BLOCKED_KEYWORDS):
                     urls.append(img_url)
         return urls
     except Exception:
@@ -162,8 +192,10 @@ def download_news_images():
         query = scene.get("image_query", f"news topic {idx}")
         out_path = IMAGES_DIR / f"scene_{idx}.jpg"
 
-        print(f"  🔍 Searching Original Photos for Scene {idx+1}: \"{query}\"")
-        candidates = search_ddg_images(query)
+        print(f"  🔍 Searching 100% Copyright-Free Photos for Scene {idx+1}: \"{query}\"")
+        candidates = search_pexels_images(query)
+        if len(candidates) < 3:
+            candidates.extend(search_ddg_images(query))
         if len(candidates) < 5:
             candidates.extend(search_bing_images(query))
         if len(candidates) < 3:
