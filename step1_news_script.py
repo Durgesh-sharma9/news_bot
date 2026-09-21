@@ -205,6 +205,9 @@ STRICT INSHORTS & NEWS KID RULES:
    - Examples: "Narendra Modi speech", "Supreme Court of India New Delhi", "Donald Trump press conference", "ISRO rocket launch"
    - NEVER use generic words like "news" or "technology".
 9. SFX per scene: choose from ["boom", "camera_click", "whoosh_deep", "ding"].
+10. PRONUNCIATION & SCRIPTING RULE FOR AI ANCHOR (SUPER CRITICAL):
+    - All numbers MUST be written in natural Hindi words (e.g. write 'पचासी हज़ार' instead of '85000', 'दो-शून्य' instead of '2-0', 'एक सौ अस्सी' instead of '180', 'दो हज़ार अट्ठाईस' instead of '2028', 'चार' instead of '4').
+    - English acronyms and names MUST be written in natural Devanagari Hindi for flawless TV anchor pronunciation (e.g. write 'इसरो' instead of 'ISRO', 'एआई' instead of 'AI', 'ओपन-एआई' instead of 'OpenAI', 'सीएम' instead of 'CM', 'पीएम' instead of 'PM', 'कैबिनेट' instead of 'Cabinet', 'सेशन कोर्ट' instead of 'Sessions Court').
 
 OUTPUT STRICTLY VALID JSON ONLY (No markdown, no extra text):
 {{
