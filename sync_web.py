@@ -127,28 +127,22 @@ def sync_card_to_web():
       "likes": 0
     }
 
-    # Step 2: Push to MongoDB Atlas (if configured)
+    # Step 2: Push to MongoDB Atlas (with duplicate prevention)
     mongo_synced = False
     if MONGODB_URI:
         try:
             from pymongo import MongoClient
             client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
             db = client["newskid"]
-            res = db["cards"].insert_one(card_doc.copy())
-            print(f"  ✅ Saved to MongoDB Atlas (ID: {res.inserted_id})")
+            existing = db["cards"].find_one({"title": card_doc["title"]})
+            if existing:
+                print(f"  ℹ️ Card already in MongoDB Atlas (ID: {existing['_id']})")
+            else:
+                res = db["cards"].insert_one(card_doc.copy())
+                print(f"  ✅ Saved to MongoDB Atlas (ID: {res.inserted_id})")
             mongo_synced = True
         except Exception as e:
             print(f"  ⚠️ MongoDB Atlas connection error: {e}")
-
-    # Step 3: Send to local/live Next.js Web API (if server running)
-    api_synced = False
-    try:
-        resp = requests.post(WEB_API_URL, json=card_doc, timeout=3)
-        if resp.status_code == 200:
-            print(f"  ✅ Synced directly to Next.js API ({WEB_API_URL})")
-            api_synced = True
-    except Exception:
-        pass
 
     # Step 4: Always append to local web_feed.json for offline backup
     feed = []

@@ -312,24 +312,22 @@ def run_fast_web_update(target_category=None):
         "likes": random.randint(15, 65)
     }
 
-    # 7. Push to MongoDB Atlas
+    # 7. Push to MongoDB Atlas (with duplicate prevention)
     mongo_saved = False
     if MONGODB_URI:
         try:
             from pymongo import MongoClient
             client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=4000)
             db = client["newskid"]
-            res = db["cards"].insert_one(final_card.copy())
-            print(f"🚀 Pushed to MongoDB Atlas! Card ID: {res.inserted_id}", flush=True)
+            existing = db["cards"].find_one({"title": final_card["title"]})
+            if existing:
+                print(f"  ℹ️ Card already in MongoDB Atlas (ID: {existing['_id']})", flush=True)
+            else:
+                res = db["cards"].insert_one(final_card.copy())
+                print(f"🚀 Pushed to MongoDB Atlas! Card ID: {res.inserted_id}", flush=True)
             mongo_saved = True
         except Exception as e:
             print(f"⚠️ MongoDB warning: {e}", flush=True)
-
-    # Direct Web API notification
-    try:
-        requests.post("http://localhost:3000/api/news", json=final_card, timeout=3)
-    except Exception:
-        pass
 
     # 8. Append to local web_feed.json
     try:
