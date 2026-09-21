@@ -186,20 +186,25 @@ CONTEXT / FACTS: {details}
 STRICT INSHORTS & NEWS KID RULES:
 1. Cover ONLY THIS SINGLE NEWS STORY. Do not mix any other news.
 2. ABSOLUTE FORBIDDEN RULE: NEVER mention, speak, or write the name of any other news channel, brand, app, or agency (NEVER say or write Aaj Tak, NDTV, BBC, Inshorts, ABP, Zee, News18, ANI, PTI, etc.). If you mention any channel name, ONLY use '{CHANNEL_NAME}'.
-3. Tone: Cute, soft-spoken, clear, and friendly young anchor. Warm, pleasant, and delightful Hindi delivery.
-4. STRICT LENGTH & WORD COUNT RULE (CRITICAL - MAX 45 SECONDS TOTAL):
+3. ZERO INTRO AT START (SUPER CRITICAL):
+   - In Scene 1: NEVER say "Namaskar", "Hello dosto", "Swagat hai", or "NEWS KID par badi khabar".
+   - START DIRECTLY with the news bombshell in the very first second! (e.g. "सोनिया गांधी को कोर्ट से लगा बड़ा कानूनी झटका...", "आईआईटी बॉम्बे में छात्र की मौत पर मचा भारी बवाल...").
+4. OUTRO AT THE VERY END (SCENE 4 ONLY):
+   - Channel branding '{CHANNEL_NAME}' MUST only appear at the very end in Scene 4 as a short sign-off (e.g. "...har badi khabar ke liye dekhte rahiye NEWS KID!").
+5. Tone: Fast, crisp, smart young anchor. Direct, punchy, high-retention delivery.
+6. STRICT LENGTH & WORD COUNT RULE (MAX 35 SECONDS TOTAL):
    - Exactly 4 scenes.
-   - Each scene's voice_text MUST be SHORT: only 15 to 18 Hindi words per scene! (Do NOT write long sentences).
-   - Total words across all 4 scenes combined MUST be between 65 and 75 words!
-   - Scene 1: Sweet young hook ("NEWS KID par badi khabar...").
-   - Scene 2: Key fact or statement.
+   - Each scene's voice_text MUST be SHORT: only 14 to 17 Hindi words per scene!
+   - Total words across all 4 scenes combined MUST be between 55 and 68 words!
+   - Scene 1: Direct news bombshell (Starts immediately with the incident).
+   - Scene 2: Exact key fact, decision, or statement.
    - Scene 3: Impact or reaction.
-   - Scene 4: Sweet sign-off / engaging question.
-5. Caption text: Short 3-5 words in Devanagari Hindi for TV screen ticker.
-6. image_query (SUPER IMPORTANT): MUST BE THE EXACT REAL ENGLISH NAME of the main person, organization, building, rocket, court, or city in this specific news story so real-life news press photos are downloaded.
+   - Scene 4: Thoughtful question + short outro ("...dekhte rahiye NEWS KID!").
+7. Caption text: Short 3-5 words in Devanagari Hindi for TV screen ticker.
+8. image_query (SUPER IMPORTANT): MUST BE THE EXACT REAL ENGLISH NAME of the main person, organization, building, rocket, court, or city in this specific news story so real-life news press photos are downloaded.
    - Examples: "Narendra Modi speech", "Supreme Court of India New Delhi", "Donald Trump press conference", "ISRO rocket launch"
    - NEVER use generic words like "news" or "technology".
-7. SFX per scene: choose from ["boom", "camera_click", "whoosh_deep", "ding"].
+9. SFX per scene: choose from ["boom", "camera_click", "whoosh_deep", "ding"].
 
 OUTPUT STRICTLY VALID JSON ONLY (No markdown, no extra text):
 {{
