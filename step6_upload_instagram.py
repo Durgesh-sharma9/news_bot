@@ -67,8 +67,11 @@ def upload_news_reel(video_path=None, custom_caption=None):
 
         custom_caption = (
             f"⚡ {title}\n\n"
-            f"📰 {summary[:170]}...\n\n"
-            f"👉 Follow @news_kid_ig for 60-second verified news updates! 🚀\n"
+            f"📰 {summary[:150]}...\n\n"
+            f"🌐 Read full story 24/7 on our Live Portal:\n"
+            f"👉 https://newskid.devv.in\n\n"
+            f"📘 Facebook: https://facebook.com/profile.php?id=61594353583927\n"
+            f"👉 Follow @news_kid_ig for daily 60-second verified news! 🚀\n"
             f"📌 Save this Reel & share with friends!\n"
             f"💬 Is par aapki kya rai hai? Comment mein batayein! 👇\n\n"
             f".\n.\n"
@@ -104,12 +107,23 @@ def upload_news_reel(video_path=None, custom_caption=None):
     cl = Client()
     try:
         cl.load_settings(SESSION_PATH)
-        print("🔄 Uploading video as Reel to @news_kid_ig...", flush=True)
-        media = cl.clip_upload(
-            path=video_path,
-            caption=custom_caption,
-            thumbnail=thumbnail_arg
-        )
+        print("🔄 Uploading video as Reel to @news_kid_ig (+ Auto Share to Facebook Page News KID)...", flush=True)
+        try:
+            media = cl.clip_upload(
+                path=video_path,
+                caption=custom_caption,
+                thumbnail=thumbnail_arg,
+                share_to_facebook=True,
+                fb_destination_id="61594353583927",
+                fb_destination_type="PAGE"
+            )
+        except Exception as fb_err:
+            print(f"⚠️ Direct fb_destination notice ({fb_err}), proceeding with standard clip_upload...", flush=True)
+            media = cl.clip_upload(
+                path=video_path,
+                caption=custom_caption,
+                thumbnail=thumbnail_arg
+            )
         reel_code = media.code
         reel_url = f"https://www.instagram.com/reel/{reel_code}/"
         print("=" * 60, flush=True)

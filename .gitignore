@@ -16,4 +16,8 @@ script.json
 research.json
 telegram_chat_id.txt
 ig_session.json
+client_secret.json
+youtube_token.json
+last_instagram_upload.json
 temp_web/
+

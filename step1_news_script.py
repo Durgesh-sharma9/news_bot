@@ -189,8 +189,10 @@ STRICT INSHORTS & NEWS KID RULES:
 3. ZERO INTRO AT START (SUPER CRITICAL):
    - In Scene 1: NEVER say "Namaskar", "Hello dosto", "Swagat hai", or "NEWS KID par badi khabar".
    - START DIRECTLY with the news bombshell in the very first second! (e.g. "सोनिया गांधी को कोर्ट से लगा बड़ा कानूनी झटका...", "आईआईटी बॉम्बे में छात्र की मौत पर मचा भारी बवाल...").
-4. OUTRO AT THE VERY END (SCENE 4 ONLY):
-   - Channel branding '{CHANNEL_NAME}' MUST only appear at the very end in Scene 4 as a short sign-off (e.g. "...har badi khabar ke liye dekhte rahiye NEWS KID!").
+4. OUTRO & WEBSITE REDIRECTION AT THE VERY END (SCENE 4 ONLY):
+   - In Scene 4, the anchor MUST invite viewers to read the full report on the official website:
+   - Example voiceover: "...इस खबर की पूरी रिपोर्ट और लाइव अपडेट्स के लिए अभी विजिट करें newskid.devv.in!"
+   - Scene 4 caption_text MUST be: "विजिट करें: newskid.devv.in"
 5. Tone: Fast, crisp, smart young anchor. Direct, punchy, high-retention delivery.
 6. STRICT LENGTH & WORD COUNT RULE (MAX 35 SECONDS TOTAL):
    - Exactly 4 scenes.
@@ -199,7 +201,7 @@ STRICT INSHORTS & NEWS KID RULES:
    - Scene 1: Direct news bombshell (Starts immediately with the incident).
    - Scene 2: Exact key fact, decision, or statement.
    - Scene 3: Impact or reaction.
-   - Scene 4: Thoughtful question + short outro ("...dekhte rahiye NEWS KID!").
+   - Scene 4: Question + Call-to-Action to visit website ("...पूरी रिपोर्ट के लिए अभी विजिट करें newskid.devv.in!").
 7. Caption text: Short 3-5 words in Devanagari Hindi for TV screen ticker.
 8. image_query (SUPER IMPORTANT): MUST BE THE EXACT REAL ENGLISH NAME of the main person, organization, building, rocket, court, or city in this specific news story so real-life news press photos are downloaded.
    - Examples: "Narendra Modi speech", "Supreme Court of India New Delhi", "Donald Trump press conference", "ISRO rocket launch"

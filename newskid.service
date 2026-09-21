@@ -1,0 +1,17 @@
+[Unit]
+Description=NEWS KID 24/7 Autopilot Engine (Video Reels + Web Updates)
+After=network.target
+
+[Service]
+Type=simple
+User=opc
+WorkingDirectory=/home/opc/news_bot
+ExecStart=/home/opc/my-yt-bot-getfacttech/venv/bin/python3 /home/opc/news_bot/autopilot_news.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
