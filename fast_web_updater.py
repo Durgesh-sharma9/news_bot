@@ -115,6 +115,51 @@ def fetch_fresh_story(category="breaking"):
     return "भारत और दुनिया की बड़ी ताज़ा हलचल", "राष्ट्रीय और अंतरराष्ट्रीय स्तर पर आज के बड़े घटनाक्रम"
 
 
+def search_custom_story(topic):
+    """Searches Google News RSS for a specific user topic."""
+    encoded = urllib.parse.quote(topic)
+    feed_url = f"https://news.google.com/rss/search?q={encoded}&hl=hi&gl=IN&ceid=IN:hi"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    req = urllib.request.Request(feed_url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=7) as resp:
+            xml_data = resp.read()
+        root = ET.fromstring(xml_data)
+        items = root.findall("./channel/item")
+        if items:
+            it = items[0]
+            raw_title = it.findtext("title", "").strip()
+            title = re.sub(r"\s*-\s*[^-]+$", "", raw_title).strip()
+            desc = it.findtext("description", "").strip()
+            clean_desc = re.sub(r"<[^>]+>", " ", desc).strip()
+            if title and len(title) > 10:
+                return title, clean_desc
+    except Exception as e:
+        print(f"  ⚠️ Topic RSS notice: {e}", flush=True)
+
+    # Fallback to English search
+    try:
+        en_url = f"https://news.google.com/rss/search?q={encoded}&hl=en-IN&gl=IN&ceid=IN:en"
+        req_en = urllib.request.Request(en_url, headers=headers)
+        with urllib.request.urlopen(req_en, timeout=7) as resp:
+            xml_data = resp.read()
+        root = ET.fromstring(xml_data)
+        items = root.findall("./channel/item")
+        if items:
+            it = items[0]
+            raw_title = it.findtext("title", "").strip()
+            title = re.sub(r"\s*-\s*[^-]+$", "", raw_title).strip()
+            desc = it.findtext("description", "").strip()
+            clean_desc = re.sub(r"<[^>]+>", " ", desc).strip()
+            if title and len(title) > 10:
+                return title, clean_desc
+    except Exception:
+        pass
+
+    return f"{topic} पर बड़ा अपडेट", f"{topic} के संबंध में हालिया विकास और महत्वपूर्ण जानकारी सामने आई है।"
+
+
+
 def generate_news_card_ai(headline, context, category):
     """Uses Gemini Key 2 to write bilingual 60-word news card with entities."""
     import google.generativeai as genai
@@ -251,21 +296,25 @@ async def generate_fast_audio(text, output_file):
     await asyncio.wait_for(comm.save(str(output_file)), timeout=15)
 
 
-def run_fast_web_update(target_category=None):
+def run_fast_web_update(target_category=None, custom_topic=None):
     print("=" * 60, flush=True)
     print("⚡ [FAST WEB AUTO-UPDATER] Instant 60-Word Card Sync", flush=True)
     print("=" * 60, flush=True)
 
-    # 1. Choose category
-    if not target_category:
-        categories = ["breaking", "national", "tech", "business", "sports", "world"]
-        target_category = random.choice(categories)
+    # 1. Choose category & story
+    if custom_topic:
+        print(f"🔍 Searching User Topic: \"{custom_topic}\"...", flush=True)
+        headline, context = search_custom_story(custom_topic)
+        if not target_category:
+            target_category = "breaking"
+    else:
+        if not target_category:
+            categories = ["breaking", "national", "tech", "business", "sports", "world"]
+            target_category = random.choice(categories)
+        headline, context = fetch_fresh_story(target_category)
 
     print(f"🏷️ Selected Category: {target_category.upper()} ({CATEGORY_BADGES.get(target_category, '🔴 बड़ी खबर')})", flush=True)
-
-    # 2. Fetch fresh breaking headline
-    headline, context = fetch_fresh_story(target_category)
-    print(f"📌 Raw Headline: \"{headline[:60]}...\"", flush=True)
+    print(f"📌 Headline: \"{headline[:60]}...\"", flush=True)
 
     # 3. Generate bilingual card using Key #2
     print(f"🤖 Generating 60-Word Inshorts Card via Gemini (Key #2)...", flush=True)
@@ -351,9 +400,28 @@ def run_fast_web_update(target_category=None):
     print(f"🏷️ Category    : {final_card['category']} | {final_card['badge']}", flush=True)
     print(f"🎙️ Audio Voice : {'Available' if audio_cdn_url else 'Browser Neural'}", flush=True)
     print("=" * 60, flush=True)
-    return True
+
+    # 10. Send Telegram Alert to User
+    try:
+        import telebot
+        t_token = config.get("telegram_bot_token", "7687762430:AAFuWh2gSHch2Cr4ppuOQjTVK4EcYSS8GkE")
+        t_bot = telebot.TeleBot(t_token)
+        caption = (
+            f"🌐 <b>NEW WEB NEWS CARD LIVE!</b>\n\n"
+            f"📌 <b>{final_card['title']}</b>\n\n"
+            f"📰 {final_card['summary'][:160]}...\n\n"
+            f"🏷️ Category: {final_card['badge']}\n"
+            f"🔗 <b>Live on Portal:</b> https://newskid.devv.in"
+        )
+        t_bot.send_photo(6347858548, photo=final_card["imageUrl"], caption=caption, parse_mode="HTML")
+    except Exception as te:
+        print(f"⚠️ Telegram notify notice: {te}", flush=True)
+
+    return final_card
 
 
 if __name__ == "__main__":
     cat = sys.argv[1] if len(sys.argv) > 1 else None
-    run_fast_web_update(cat)
+    topic = sys.argv[2] if len(sys.argv) > 2 else None
+    run_fast_web_update(cat, topic)
+

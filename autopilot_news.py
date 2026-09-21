@@ -4,6 +4,7 @@ import time
 import json
 import datetime
 import subprocess
+import threading
 from pathlib import Path
 
 # UTF-8 stdout fix
@@ -148,8 +149,19 @@ def main():
         "🚀 <b>NEWS KID 24/7 Autopilot Engine is Online!</b>\n\n"
         f"🎬 <b>Daily Reels:</b> 4 Slots (10:00 AM, 03:00 PM, 07:00 PM, 10:30 PM)\n"
         f"🌐 <b>Web Updates:</b> 25 Daily Card Refreshes (Day & Night)\n"
-        "🟢 Status: Actively Monitoring Timers."
+        "🟢 Status: Actively Monitoring Timers & Telegram Listener."
     )
+
+    # Start 24/7 Interactive Telegram Bot Listener in background thread
+    def start_tg():
+        try:
+            import telegram_news_bot
+            telegram_news_bot.start_bot()
+        except Exception as te:
+            print(f"⚠️ Telegram listener thread note: {te}")
+
+    threading.Thread(target=start_tg, daemon=True).start()
+    print("🤖 Telegram Bot Listener (@News998889bot) launched in background!", flush=True)
 
     while True:
         try:
