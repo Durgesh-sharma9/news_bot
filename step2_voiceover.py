@@ -21,8 +21,8 @@ TEMP_DIR = SCRIPT_DIR / "temp_audios"
 TEMP_DIR.mkdir(exist_ok=True)
 
 VOICE_MAP = {
-    "female": {"voice": "hi-IN-SwaraNeural", "rate": "+13%", "pitch": "+16Hz", "label": "Young Girl Anchor"},
-    "male":   {"voice": "hi-IN-MadhurNeural", "rate": "+13%", "pitch": "+20Hz", "label": "Young Boy Anchor"}
+    "female": {"voice": "hi-IN-SwaraNeural", "rate": "+8%", "pitch": "+10Hz", "label": "Cute & Soft Girl Anchor"},
+    "male":   {"voice": "hi-IN-MadhurNeural", "rate": "+8%", "pitch": "+12Hz", "label": "Cute & Soft Boy Anchor"}
 }
 
 
