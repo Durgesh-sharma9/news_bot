@@ -287,13 +287,13 @@ def upload_to_imagekit_cdn(file_path, file_name, folder="/newskid_cards/"):
         return None
 
 
-async def generate_fast_audio(text, output_file):
-    """Generates natural studio voiceover via edge-tts."""
+async def generate_fast_audio(text, output_file, title=""):
+    """Generates natural studio voiceover via edge-tts for the complete news card."""
     import edge_tts
-    # Take first 2 sentences / ~150 chars for fast TTS audio preview
-    short_text = text.split("।")[0] + "।" if "।" in text else text[:180]
-    comm = edge_tts.Communicate(short_text, "hi-IN-MadhurNeural", rate="+10%", pitch="+15Hz")
-    await asyncio.wait_for(comm.save(str(output_file)), timeout=15)
+    # Read full headline + complete news summary (never chop off!)
+    full_speech = f"{title}। {text}".strip() if title else text.strip()
+    comm = edge_tts.Communicate(full_speech, "hi-IN-MadhurNeural", rate="+8%", pitch="+10Hz")
+    await asyncio.wait_for(comm.save(str(output_file)), timeout=30)
 
 
 def run_fast_web_update(target_category=None, custom_topic=None):
@@ -331,7 +331,7 @@ def run_fast_web_update(target_category=None, custom_topic=None):
     try:
         print(f"🎙️ Generating Studio Audio Voiceover...", flush=True)
         temp_audio = TEMP_DIR / f"voice_{int(datetime.now().timestamp())}.mp3"
-        asyncio.run(generate_fast_audio(ai_card["summary"], temp_audio))
+        asyncio.run(generate_fast_audio(ai_card["summary"], temp_audio, title=ai_card.get("title", "")))
 
         if temp_audio.exists() and temp_audio.stat().st_size > 1000:
             audio_cdn_url = upload_to_imagekit_cdn(temp_audio, temp_audio.name, folder="/newskid_audio/")
@@ -407,13 +407,23 @@ def run_fast_web_update(target_category=None, custom_topic=None):
         t_token = config.get("telegram_bot_token", "7687762430:AAFuWh2gSHch2Cr4ppuOQjTVK4EcYSS8GkE")
         t_bot = telebot.TeleBot(t_token)
         caption = (
-            f"🌐 <b>NEW WEB NEWS CARD LIVE!</b>\n\n"
-            f"📌 <b>{final_card['title']}</b>\n\n"
-            f"📰 {final_card['summary'][:160]}...\n\n"
-            f"🏷️ Category: {final_card['badge']}\n"
-            f"🔗 <b>Live on Portal:</b> https://newskid.devv.in"
+            f"⚡ <b>LIVE NEWS UPDATE PUBLISHED!</b>\n\n"
+            f"📌 <b>Headline:</b>\n{final_card['title']}\n\n"
+            f"📰 <b>Summary:</b>\n{final_card['summary']}\n\n"
+            f"🏷️ <b>Category:</b> {final_card['badge']}\n"
+            f"🌐 <b>Live on Portal:</b> https://newskid.devv.in"
         )
-        t_bot.send_photo(6347858548, photo=final_card["imageUrl"], caption=caption, parse_mode="HTML")
+        sent = False
+        img_url = final_card.get("imageUrl")
+        if img_url and img_url.startswith("http"):
+            try:
+                t_bot.send_photo(6347858548, photo=img_url, caption=caption, parse_mode="HTML")
+                sent = True
+            except Exception as pe:
+                print(f"⚠️ Photo alert notice: {pe}", flush=True)
+
+        if not sent:
+            t_bot.send_message(6347858548, caption, parse_mode="HTML")
     except Exception as te:
         print(f"⚠️ Telegram notify notice: {te}", flush=True)
 

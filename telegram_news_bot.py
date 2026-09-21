@@ -39,6 +39,7 @@ if CONFIG_FILE.exists():
         pass
 
 BOT_TOKEN = config.get("telegram_bot_token", "7687762430:AAFuWh2gSHch2Cr4ppuOQjTVK4EcYSS8GkE")
+ADMIN_CHAT_ID = 6347858548
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
 
 pending_topics = {}
@@ -54,32 +55,79 @@ def get_action_menu(topic):
 
 def get_main_menu():
     markup = types.InlineKeyboardMarkup(row_width=2)
-    b1 = types.InlineKeyboardButton("🔴 Breaking News (Auto)", callback_data="cat_breaking")
+    b_auto = types.InlineKeyboardButton("⚡ 1-Click Auto Post (No Topic Needed)", callback_data="btn_auto_run")
+    b1 = types.InlineKeyboardButton("🔴 Breaking News", callback_data="cat_breaking")
     b2 = types.InlineKeyboardButton("🚀 Tech & AI News", callback_data="cat_tech")
     b3 = types.InlineKeyboardButton("🇮🇳 National News", callback_data="cat_national")
     b4 = types.InlineKeyboardButton("💼 Business News", callback_data="cat_business")
     b5 = types.InlineKeyboardButton("🏏 Sports Update", callback_data="cat_sports")
-    b6 = types.InlineKeyboardButton("✍️ Type Any Topic", callback_data="cat_custom")
-    markup.add(b1)
-    markup.add(b2, b3)
-    markup.add(b4, b5)
-    markup.add(b6)
+    b6 = types.InlineKeyboardButton("✍️ Custom Topic", callback_data="cat_custom")
+    markup.add(b_auto)
+    markup.add(b1, b2)
+    markup.add(b3, b4)
+    markup.add(b5, b6)
     return markup
+
+
+def send_rich_card_message(chat_id, card, status_msg_id=None):
+    title = card.get("title", "Breaking News")
+    summary = card.get("summary", "")
+    badge = card.get("badge", "🔴 बड़ी खबर")
+    img_url = card.get("imageUrl", "")
+
+    caption = (
+        f"⚡ <b>LIVE NEWS UPDATE PUBLISHED!</b>\n\n"
+        f"📌 <b>Headline:</b>\n{title}\n\n"
+        f"📰 <b>Summary:</b>\n{summary}\n\n"
+        f"🏷️ <b>Category:</b> {badge}\n"
+        f"🌐 <b>Live on Portal:</b> https://newskid.devv.in"
+    )
+
+    if status_msg_id:
+        try:
+            bot.delete_message(chat_id, status_msg_id)
+        except Exception:
+            pass
+
+    # Try sending photo with caption
+    sent = False
+    if img_url and img_url.startswith("http"):
+        try:
+            bot.send_photo(chat_id, photo=img_url, caption=caption, parse_mode="HTML")
+            sent = True
+        except Exception as e:
+            print(f"⚠️ Telegram photo notice: {e}")
+
+    # Fallback to rich HTML text
+    if not sent:
+        try:
+            bot.send_message(chat_id, caption, parse_mode="HTML")
+        except Exception:
+            clean_text = caption.replace("<b>", "").replace("</b>", "")
+            bot.send_message(chat_id, clean_text)
 
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     chat_id = message.chat.id
     welcome_text = (
-        "<b>📰 Welcome to NEWS KID Automation Bot!</b>\n\n"
-        "Aap yahan se **Web Portal** aur **Video Reels** dono direct control kar sakte hain:\n\n"
-        "👉 <b>Quick Commands:</b>\n"
-        "• <code>/web [topic]</code> ➔ Instant 10s Card on newskid.devv.in\n"
-        "• <code>/reel [topic]</code> ➔ 60s Video Reel with Voiceover & Photos\n"
-        "• <code>/breaking</code> ➔ Top live breaking news push\n\n"
-        "Ya seedhe **koi bhi topic type karke bhej dijiye**, bot automatic research karke publish kar dega!"
+        "<b>📰 Welcome to NEWS KID Automation Controller!</b>\n\n"
+        "⚡ <b>1-Click Auto Run:</b> Type <code>/run</code> — Bot khud taaza khabar dhundhega aur 10 second me website par publish kar dega (zero typing required)!\n\n"
+        "👉 <b>Other Commands:</b>\n"
+        "• <code>/run</code> ➔ Instant Auto Web Card (No topic needed)\n"
+        "• <code>/web [topic]</code> ➔ Specific topic card on newskid.devv.in\n"
+        "• <code>/reel [topic]</code> ➔ 60s Video Reel with AI Voice & Photos\n"
+        "• <code>/breaking</code> ➔ Top breaking news push\n\n"
+        "Ya seedhe **koi bhi topic type karke bhej dijiye**!"
     )
     bot.send_message(chat_id, welcome_text, reply_markup=get_main_menu())
+
+
+@bot.message_handler(commands=['run', 'auto', 'fast'])
+def handle_auto_run_command(message):
+    chat_id = message.chat.id
+    status_msg = bot.send_message(chat_id, "⚡ <b>Auto News Fetching...</b> Google News se taaza khabar dhundh kar 10s me web par daal raha hoon...")
+    threading.Thread(target=generate_and_send_web_card, args=(chat_id, None, None, status_msg.message_id)).start()
 
 
 @bot.message_handler(commands=['web'])
@@ -88,26 +136,25 @@ def handle_web_command(message):
     args = message.text.split(maxsplit=1)
     if len(args) > 1:
         topic = args[1].strip()
-        threading.Thread(target=generate_and_send_web_card, args=(chat_id, topic, "breaking")).start()
+        status_msg = bot.send_message(chat_id, f"⏳ <b>Researching \"{topic}\"...</b> 10s me web card ban raha hai...")
+        threading.Thread(target=generate_and_send_web_card, args=(chat_id, topic, "breaking", status_msg.message_id)).start()
     else:
-        bot.send_message(chat_id, "⚠️ Kripya topic sath me likhein!\nExample: <code>/web ISRO Chandrayaan 4</code>")
+        # If no topic, run auto!
+        handle_auto_run_command(message)
 
 
 @bot.message_handler(commands=['reel', 'video', 'news'])
 def handle_video_command(message):
     chat_id = message.chat.id
     args = message.text.split(maxsplit=1)
-    if len(args) > 1:
-        topic = args[1].strip()
-        threading.Thread(target=generate_and_send_news_video, args=(chat_id, topic, "breaking")).start()
-    else:
-        bot.send_message(chat_id, "⚠️ Kripya topic sath me likhein!\nExample: <code>/reel Stock Market Crash</code>")
+    topic = args[1].strip() if len(args) > 1 else "breaking"
+    status_msg = bot.send_message(chat_id, f"🎬 <b>60s Video Reel Generation Started:</b> <i>\"{topic}\"</i>\n• AI Script\n• Anchor Voice\n• Photos & Subtitles...")
+    threading.Thread(target=generate_and_send_news_video, args=(chat_id, topic, "breaking", status_msg.message_id)).start()
 
 
 @bot.message_handler(commands=['breaking'])
 def handle_breaking_command(message):
-    chat_id = message.chat.id
-    threading.Thread(target=generate_and_send_web_card, args=(chat_id, None, "breaking")).start()
+    handle_auto_run_command(message)
 
 
 @bot.message_handler(func=lambda m: True)
@@ -132,6 +179,12 @@ def handle_callback(call):
     chat_id = call.message.chat.id
     data = call.data
 
+    if data == "btn_auto_run":
+        bot.answer_callback_query(call.id, text="Auto fetching breaking news...")
+        bot.edit_message_text("⚡ <b>Auto News Fetching...</b> Google News se taaza khabar dhoondh raha hoon...", chat_id, call.message.message_id)
+        threading.Thread(target=generate_and_send_web_card, args=(chat_id, None, None, call.message.message_id)).start()
+        return
+
     category_map = {
         "cat_breaking": ("Latest Breaking News", "breaking"),
         "cat_tech": ("Technology News", "tech"),
@@ -147,9 +200,9 @@ def handle_callback(call):
 
     if data in category_map:
         topic, category = category_map[data]
-        bot.answer_callback_query(call.id, text=f"Processing {category}...")
-        pending_topics[chat_id] = topic
-        bot.send_message(chat_id, f"📌 <b>Category:</b> {category.upper()}\nKya banana chahte hain?", reply_markup=get_action_menu(topic))
+        bot.answer_callback_query(call.id, text=f"Auto processing {category}...")
+        bot.edit_message_text(f"⏳ <b>{category.upper()} News Fetching...</b> Card ban raha hai...", chat_id, call.message.message_id)
+        threading.Thread(target=generate_and_send_web_card, args=(chat_id, None, category, call.message.message_id)).start()
         return
 
     if data == "act_web":
@@ -168,47 +221,35 @@ def handle_callback(call):
 
 
 def generate_and_send_web_card(chat_id, topic, category="breaking", status_msg_id=None):
-    if not status_msg_id:
-        status_msg = bot.send_message(chat_id, f"⏳ <b>Web Card Push Ho Raha Hai:</b> <i>\"{topic or 'Breaking News'}\"</i>...")
-        status_msg_id = status_msg.message_id
-
     try:
         from fast_web_updater import run_fast_web_update
         card = run_fast_web_update(target_category=category, custom_topic=topic)
         if card and isinstance(card, dict):
-            caption = (
-                f"🎉 <b>CARD PUBLISHED TO WEB PORTAL!</b>\n\n"
-                f"📌 <b>{card['title']}</b>\n\n"
-                f"📰 {card['summary'][:160]}...\n\n"
-                f"🏷️ <b>Category:</b> {card['badge']}\n"
-                f"🌐 <b>Live on Portal:</b> https://newskid.devv.in"
-            )
+            send_rich_card_message(chat_id, card, status_msg_id)
+        else:
+            if status_msg_id:
+                bot.edit_message_text("❌ Card generate nahi ho paya!", chat_id, status_msg_id)
+    except Exception as e:
+        print(f"❌ Web update error: {e}")
+        if status_msg_id:
             try:
-                bot.delete_message(chat_id, status_msg_id)
+                bot.edit_message_text(f"❌ Error: {e}", chat_id, status_msg_id)
             except Exception:
                 pass
-            bot.send_photo(chat_id, photo=card.get("imageUrl"), caption=caption, parse_mode="HTML")
-        else:
-            bot.edit_message_text("❌ Card generate nahi ho paya!", chat_id, status_msg_id)
-    except Exception as e:
-        bot.edit_message_text(f"❌ Web update error: {e}", chat_id, status_msg_id)
 
 
 def generate_and_send_news_video(chat_id, topic, category="breaking", status_msg_id=None):
-    if not status_msg_id:
-        status_msg = bot.send_message(chat_id, f"⏳ <b>60s Reel Render Ho Rahi Hai:</b> <i>\"{topic}\"</i>\n• Real HD Photos\n• AI Anchor Voice\n• Auto-Publish to Instagram...")
-        status_msg_id = status_msg.message_id
-
     try:
         cmd = [PYTHON_EXE, str(RUN_NEWS_PATH), topic or "breaking", category]
         res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=str(SCRIPT_DIR))
 
         if res.returncode != 0:
             err = res.stderr[-300:] if res.stderr else res.stdout[-300:]
-            bot.edit_message_text(f"❌ Video render error: {err}", chat_id, status_msg_id)
+            if status_msg_id:
+                bot.edit_message_text(f"❌ Video render error: {err}", chat_id, status_msg_id)
             return
 
-        # Read last upload
+        # Read last upload details
         log_file = SCRIPT_DIR / "last_instagram_upload.json"
         reel_url = ""
         if log_file.exists():
@@ -220,37 +261,48 @@ def generate_and_send_news_video(chat_id, topic, category="breaking", status_msg
                 pass
 
         headline = topic
+        summary = ""
         if SCRIPT_JSON_PATH.exists():
             try:
                 with open(SCRIPT_JSON_PATH, "r", encoding="utf-8") as f:
-                    headline = json.load(f).get("title", headline)
+                    sdata = json.load(f)
+                    headline = sdata.get("title", headline)
+                    scenes = sdata.get("scenes", [])
+                    summary = " ".join([s.get("voice_text", "") for s in scenes if s.get("voice_text")][:2])
             except Exception:
                 pass
 
         caption = (
             f"🎉 <b>NEWS REEL PUBLISHED LIVE!</b>\n\n"
-            f"📌 <b>{headline}</b>\n\n"
+            f"📌 <b>Headline:</b>\n{headline}\n\n"
+            f"📰 <b>Story:</b>\n{summary[:160]}...\n\n"
             f"📲 <b>Instagram Reel:</b> {reel_url or '@news_kid_ig'}\n"
-            f"🌐 <b>Web Portal:</b> https://newskid.devv.in"
+            f"🌐 <b>Live Portal:</b> https://newskid.devv.in"
         )
 
-        if VIDEO_PATH.exists():
+        if status_msg_id:
             try:
                 bot.delete_message(chat_id, status_msg_id)
             except Exception:
                 pass
+
+        if VIDEO_PATH.exists():
             with open(VIDEO_PATH, "rb") as vf:
                 bot.send_video(chat_id, video=vf, caption=caption, parse_mode="HTML", supports_streaming=True)
         else:
-            bot.edit_message_text(caption, chat_id, status_msg_id)
+            bot.send_message(chat_id, caption, parse_mode="HTML")
     except Exception as e:
-        bot.edit_message_text(f"❌ Video error: {e}", chat_id, status_msg_id)
+        if status_msg_id:
+            try:
+                bot.edit_message_text(f"❌ Video error: {e}", chat_id, status_msg_id)
+            except Exception:
+                pass
 
 
 def start_bot():
     print("=" * 60)
     print("🤖 NEWS KID TELEGRAM CONTROLLER ACTIVE: @News998889bot")
-    print("   Features: Instant Web Card Push (10s) | 60s Reel Video (3min)")
+    print("   Commands: /run (Auto Push) | /web [topic] | /reel [topic]")
     print("=" * 60)
     while True:
         try:
