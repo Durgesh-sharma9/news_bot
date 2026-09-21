@@ -78,12 +78,12 @@ def handle_callback(call):
     chat_id = call.message.chat.id
     data = call.data
 
-    category_topics = {
-        "cat_breaking": "Latest Breaking News India",
-        "cat_tech": "Artificial Intelligence and Tech News India",
-        "cat_national": "Top National News India",
-        "cat_business": "Stock Market and Business News India",
-        "cat_sports": "Latest Cricket and Sports News India"
+    category_map = {
+        "cat_breaking": ("Latest Breaking News", "breaking"),
+        "cat_tech": ("Technology News", "tech"),
+        "cat_national": ("National News", "national"),
+        "cat_business": ("Business & Economy News", "business"),
+        "cat_sports": ("Sports News", "sports")
     }
 
     if data == "cat_custom":
@@ -92,10 +92,10 @@ def handle_callback(call):
         bot.send_message(chat_id, "✍️ <b>Apna Topic type karke bhejein:</b>\n(Jaise: <i>ISRO New Satellite Launch</i> ya <i>Union Budget Update</i>)")
         return
 
-    if data in category_topics:
-        topic = category_topics[data]
-        bot.answer_callback_query(call.id, text=f"Generating: {topic[:20]}...")
-        threading.Thread(target=generate_and_send_news, args=(chat_id, topic)).start()
+    if data in category_map:
+        topic, category = category_map[data]
+        bot.answer_callback_query(call.id, text=f"Generating: {topic}...")
+        threading.Thread(target=generate_and_send_news, args=(chat_id, topic, category)).start()
 
 
 @bot.message_handler(commands=['news'])
@@ -104,7 +104,7 @@ def handle_news_command(message):
     args = message.text.split(maxsplit=1)
     if len(args) > 1:
         topic = args[1].strip()
-        threading.Thread(target=generate_and_send_news, args=(chat_id, topic)).start()
+        threading.Thread(target=generate_and_send_news, args=(chat_id, topic, "custom")).start()
     else:
         bot.send_message(chat_id, "⚠️ Kripya topic sath mein likhein!\nExample: <code>/news ISRO Mission</code>")
 
@@ -112,7 +112,7 @@ def handle_news_command(message):
 @bot.message_handler(commands=['breaking'])
 def handle_breaking_command(message):
     chat_id = message.chat.id
-    threading.Thread(target=generate_and_send_news, args=(chat_id, "Latest Breaking News India")).start()
+    threading.Thread(target=generate_and_send_news, args=(chat_id, "Latest Breaking News", "breaking")).start()
 
 
 @bot.message_handler(func=lambda m: True)
@@ -123,12 +123,12 @@ def handle_text(message):
 
     if state == "awaiting_custom_topic" or len(topic) > 3:
         user_states.pop(chat_id, None)
-        threading.Thread(target=generate_and_send_news, args=(chat_id, topic)).start()
+        threading.Thread(target=generate_and_send_news, args=(chat_id, topic, "custom")).start()
     else:
         bot.send_message(chat_id, "Kripya menu se option chunein:", reply_markup=get_main_menu())
 
 
-def generate_and_send_news(chat_id, topic):
+def generate_and_send_news(chat_id, topic, category="breaking"):
     status_msg = bot.send_message(
         chat_id,
         f"⏳ <b>Generating News Video:</b> <i>\"{topic}\"</i>\n"
@@ -139,7 +139,7 @@ def generate_and_send_news(chat_id, topic):
     )
 
     try:
-        cmd = [PYTHON_EXE, str(RUN_NEWS_PATH), topic]
+        cmd = [PYTHON_EXE, str(RUN_NEWS_PATH), topic, category]
         result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=str(SCRIPT_DIR))
 
         if result.returncode != 0:

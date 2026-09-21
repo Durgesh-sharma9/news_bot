@@ -163,9 +163,9 @@ def download_news_images():
         out_path = IMAGES_DIR / f"scene_{idx}.jpg"
 
         print(f"  🔍 Searching Original Photos for Scene {idx+1}: \"{query}\"")
-        candidates = search_bing_images(query)
-        if len(candidates) < 3:
-            candidates.extend(search_ddg_images(query))
+        candidates = search_ddg_images(query)
+        if len(candidates) < 5:
+            candidates.extend(search_bing_images(query))
         if len(candidates) < 3:
             candidates.extend(search_google_images(query))
 

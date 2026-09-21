@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import re
+import random
 import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -16,6 +17,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 CONFIG_FILE = SCRIPT_DIR / "config.json"
 SCRIPT_FILE = SCRIPT_DIR / "script.json"
 RESEARCH_FILE = SCRIPT_DIR / "research.json"
+USED_NEWS_FILE = SCRIPT_DIR / "used_news.json"
 
 # Load Config
 config = {}
@@ -27,79 +29,154 @@ if CONFIG_FILE.exists():
         pass
 
 GEMINI_API_KEY = config.get("gemini_api_key", "AQ.Ab8RN6ISrNgLMM1eooye8FS0QTYH3DMTYT-SkWMKiZw8jrKcrg")
+CHANNEL_NAME = config.get("news_channel_name", "NEWS KID")
 genai.configure(api_key=GEMINI_API_KEY)
 
+CATEGORY_FEEDS = {
+    "breaking": "https://news.google.com/rss?hl=hi&gl=IN&ceid=IN:hi",
+    "national": "https://news.google.com/rss/headlines/section/topic/NATION?hl=hi&gl=IN&ceid=IN:hi",
+    "tech": "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=hi&gl=IN&ceid=IN:hi",
+    "business": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=hi&gl=IN&ceid=IN:hi",
+    "sports": "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=hi&gl=IN&ceid=IN:hi",
+    "world": "https://news.google.com/rss/headlines/section/topic/WORLD?hl=hi&gl=IN&ceid=IN:hi"
+}
 
-def fetch_google_news_rss(topic=None):
-    """Fetch latest top headlines or topic news from Google News RSS."""
+
+def load_used_news():
+    if USED_NEWS_FILE.exists():
+        try:
+            with open(USED_NEWS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+
+def save_used_news(title):
+    used = load_used_news()
+    used.append(title)
+    if len(used) > 100:
+        used = used[-100:]
+    with open(USED_NEWS_FILE, "w", encoding="utf-8") as f:
+        json.dump(used, f, ensure_ascii=False, indent=2)
+
+
+def clean_headline_source(raw_title):
+    """Strips trailing external news channel/source name (e.g. ' - Aaj Tak', ' - BBC', ' - News18')."""
+    cleaned = re.sub(r'\s*[-–|]\s*[^-–|]+$', '', raw_title).strip()
+    return cleaned if cleaned else raw_title
+
+
+def fetch_single_breaking_story(category="breaking", custom_topic=None):
+    """
+    Inshorts Model: Extracts ONE single top real news story.
+    Returns: (headline, description, source_url)
+    """
+    used = load_used_news()
+
+    if custom_topic and custom_topic.lower() not in ["auto", "breaking", "breaking news", "latest breaking news india"]:
+        # Custom topic search
+        encoded = urllib.parse.quote(f"{custom_topic} news India")
+        url = f"https://news.google.com/rss/search?q={encoded}&hl=hi&gl=IN&ceid=IN:hi"
+    else:
+        url = CATEGORY_FEEDS.get(category.lower(), CATEGORY_FEEDS["breaking"])
+
     try:
-        if topic:
-            encoded = urllib.parse.quote(f"{topic} news India")
-            url = f"https://news.google.com/rss/search?q={encoded}&hl=hi&gl=IN&ceid=IN:hi"
-        else:
-            url = "https://news.google.com/rss?hl=hi&gl=IN&ceid=IN:hi"
-
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
         with urllib.request.urlopen(req, timeout=10) as response:
             xml_data = response.read()
 
         root = ET.fromstring(xml_data)
-        items = []
-        for item in root.findall(".//item")[:5]:
+        items = root.findall(".//item")
+
+        # Pick top unused story
+        for item in items[:10]:
             title_elem = item.find("title")
             desc_elem = item.find("description")
-            title = title_elem.text if title_elem is not None else ""
+            raw_title = title_elem.text if title_elem is not None else ""
             desc = desc_elem.text if desc_elem is not None else ""
-            clean_desc = re.sub(r'<[^>]+>', '', desc)
-            items.append(f"- {title}: {clean_desc}")
+            clean_desc = re.sub(r'<[^>]+>', '', desc).strip()
+            headline = clean_headline_source(raw_title)
 
-        return "\n".join(items)
+            # Skip if already used recently
+            if any(headline in u or u in headline for u in used):
+                continue
+
+            save_used_news(headline)
+            return headline, clean_desc
+
+        # If all used, pick first
+        if items:
+            t = clean_headline_source(items[0].find("title").text)
+            d = re.sub(r'<[^>]+>', '', items[0].find("description").text or "").strip()
+            return t, d
+
     except Exception as e:
         print(f"⚠️ RSS Fetch error: {e}")
-        return ""
+
+    # Fallback if offline
+    fallback_title = custom_topic if custom_topic else "भारत का नया वैज्ञानिक कीर्तिमान"
+    return fallback_title, "देश में विज्ञान और तकनीक के क्षेत्र में एक नया मील का पत्थर हासिल हुआ है।"
 
 
-def generate_news_script(topic="Breaking News India", category="National"):
+def generate_news_script(topic="breaking", category="breaking"):
     print("\n" + "="*55)
-    print(f"📰 FETCHING & GENERATING NEWS SCRIPT: {topic}")
+    print(f"📰 INSHORTS REAL-TIME NEWS ENGINE")
+    print(f"   Topic/Category: {topic}")
     print("="*55)
 
-    rss_context = fetch_google_news_rss(topic)
-    research_data = {"topic": topic, "rss_context": rss_context}
+    headline, details = fetch_single_breaking_story(category=category, custom_topic=topic)
+    print(f"\n⚡ TOP BREAKING STORY IDENTIFIED:")
+    print(f"   👉 \"{headline}\"")
+    print(f"   ℹ️ Context: {details[:120]}...\n")
+
+    # Alternate or pick gender dynamically
+    voice_gender = random.choice(["female", "male"])
+    print(f"🎙️ Selected Anchor Gender: {voice_gender.upper()} ({'Swara' if voice_gender == 'female' else 'Madhur'})")
+
+    research_data = {
+        "story_headline": headline,
+        "story_context": details,
+        "category": category,
+        "voice_gender": voice_gender
+    }
     with open(RESEARCH_FILE, "w", encoding="utf-8") as f:
         json.dump(research_data, f, ensure_ascii=False, indent=2)
 
     prompt = f"""
-You are an expert TV Breaking News Anchor and Inshorts Chief Editor.
-Create an energetic, high-tempo 35-45 second Hindi News Short Video Script on this topic.
+You are the Lead News Anchor of the national TV news channel '{CHANNEL_NAME}'.
+Create an intense, fast-paced, high-impact 35-42 second Hindi News Video Script on THIS ONE SINGLE BREAKING STORY.
 
-TOPIC: {topic}
-LIVE CONTEXT / HEADLINES:
-{rss_context if rss_context else "Cover the latest factual updates on this topic."}
+STORY HEADLINE: {headline}
+CONTEXT / FACTS: {details}
 
-CRITICAL RULES FOR ACCURACY & SPEED:
-1. Language: Ultra-energetic, fast-paced Hindi (Devanagari) TV anchor delivery (Aaj Tak / ABP / Inshorts style).
-2. Pacing: Direct to the point, punchy facts, no slow intros or filler phrases.
-3. Badge: 2-3 words breaking alert (e.g. "🔴 बड़ी खबर", "🚀 अंतरिक्ष मिशन", "⚡ बड़ी चेतावनी", "🇮🇳 भारत का डंका").
-4. Exactly 4 scenes. Total script should be ~100-120 words total so it speaks fast and cleanly in ~35-40 seconds.
-5. Caption text: 4-6 words punchy text in Devanagari Hindi for screen captions.
-6. image_query (SUPER IMPORTANT): MUST BE ULTRA-SPECIFIC to the REAL subject so accurate news photos are downloaded.
-   - Include the EXACT real English name of the person, leader, rocket, gadget, car, place, or organization.
-   - Example Good: "Narendra Modi addressing rally news photo", "ISRO LVM3 rocket launch Sriharikota", "Sam Altman OpenAI DevDay conference"
-   - Example Bad: "technology", "happy people", "space"
-7. SFX: choose from ["boom", "camera_click", "whoosh_deep", "ding"].
+STRICT INSHORTS RULES:
+1. Cover ONLY THIS SINGLE NEWS STORY. Do not mix any other news.
+2. ABSOLUTE FORBIDDEN RULE: NEVER mention, speak, or write the name of any other news channel, brand, app, or agency (NEVER say or write Aaj Tak, NDTV, BBC, Inshorts, ABP, Zee, News18, ANI, PTI, etc.). If you mention any channel name, ONLY use '{CHANNEL_NAME}'.
+3. Tone: Real TV News Anchor (energetic, crisp, dramatic, fast cadence).
+4. Exactly 4 scenes (total duration ~35-40 seconds, ~110 words total):
+   - Scene 1: The big breaking revelation / What just happened.
+   - Scene 2: Exact key statement, facts, numbers, or person involved.
+   - Scene 3: Ground impact / Public or official reaction.
+   - Scene 4: Future consequence / Final takeaway.
+5. Caption text: Short 4-6 words in Devanagari Hindi for TV screen ticker.
+6. image_query (SUPER IMPORTANT): MUST BE THE EXACT REAL ENGLISH NAME of the main person, organization, building, rocket, court, or city in this specific news story so real-life news press photos are downloaded.
+   - Examples: "Narendra Modi speech", "Supreme Court of India New Delhi", "Donald Trump press conference", "ISRO rocket launch"
+   - NEVER use generic words like "news" or "technology".
+7. SFX per scene: choose from ["boom", "camera_click", "whoosh_deep", "ding"].
 
-OUTPUT STRICTLY VALID JSON ONLY (No markdown, no explanation):
+OUTPUT STRICTLY VALID JSON ONLY (No markdown, no extra text):
 {{
-  "topic": "{topic}",
-  "title": "Short Punchy Hindi Headline (under 55 chars)",
+  "topic": "{headline}",
+  "title": "{headline[:55]}",
   "badge": "🔴 बड़ी खबर",
   "category": "{category}",
+  "voice_gender": "{voice_gender}",
   "scenes": [
     {{
       "voice_text": "Hindi anchor narration for scene 1",
       "caption_text": "Short caption in Devanagari",
-      "image_query": "specific real photo search query in english",
+      "image_query": "specific real person place or event in english",
       "sfx": "boom"
     }}
   ]
@@ -129,17 +206,20 @@ OUTPUT STRICTLY VALID JSON ONLY (No markdown, no explanation):
         sys.exit(1)
 
     script_data = json.loads(clean_text)
+    script_data["voice_gender"] = voice_gender
 
     with open(SCRIPT_FILE, "w", encoding="utf-8") as f:
         json.dump(script_data, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ News Script Generated Successfully!")
-    print(f"📌 Headline: {script_data.get('title')}")
-    print(f"🏷️ Badge   : {script_data.get('badge')}")
-    print(f"🎬 Scenes  : {len(script_data.get('scenes', []))} scenes ready\n")
+    print(f"\n✅ News Script Generated Successfully!")
+    print(f"📌 Headline : {script_data.get('title')}")
+    print(f"🏷️ Badge    : {script_data.get('badge')}")
+    print(f"🎙️ Anchor   : {voice_gender.upper()} Voice")
+    print(f"🎬 Scenes   : {len(script_data.get('scenes', []))} scenes ready\n")
     return script_data
 
 
 if __name__ == "__main__":
-    t = sys.argv[1] if len(sys.argv) > 1 else "ISRO Gaganyaan Mission 2026"
-    generate_news_script(t)
+    t = sys.argv[1] if len(sys.argv) > 1 else "breaking"
+    c = sys.argv[2] if len(sys.argv) > 2 else "breaking"
+    generate_news_script(t, c)

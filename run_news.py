@@ -28,15 +28,16 @@ def run_step(step_name, script_path, args=None):
 
 
 def main():
-    topic = sys.argv[1] if len(sys.argv) > 1 else "ISRO Gaganyaan Mission 2026"
+    topic = sys.argv[1] if len(sys.argv) > 1 else "breaking"
+    category = sys.argv[2] if len(sys.argv) > 2 else "breaking"
 
     start_time = time.time()
     print("\n" + "🔥"*25)
-    print(f"🔥 FAST NEWS VIDEO GENERATOR: \"{topic}\"")
+    print(f"🔥 NEWS KID VIDEO GENERATOR: \"{topic}\" (Category: {category.upper()})")
     print("🔥"*25)
 
     # Step 1: Script
-    run_step("Step 1: Generating News Script & Research", "step1_news_script.py", [topic])
+    run_step("Step 1: Inshorts News Research & Anchor Script", "step1_news_script.py", [topic, category])
 
     # Step 2: Voiceover
     run_step("Step 2: Generating AI News Anchor Voice", "step2_voiceover.py")

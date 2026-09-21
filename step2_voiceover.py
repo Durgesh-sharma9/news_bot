@@ -20,14 +20,21 @@ TIMING_FILE = SCRIPT_DIR / "voiceover_timing.json"
 TEMP_DIR = SCRIPT_DIR / "temp_audios"
 TEMP_DIR.mkdir(exist_ok=True)
 
-DEFAULT_VOICE = "hi-IN-MadhurNeural"  # Professional Hindi News Anchor
+VOICE_MAP = {
+    "female": {"voice": "hi-IN-SwaraNeural", "rate": "+14%", "pitch": "+1Hz"},
+    "male":   {"voice": "hi-IN-MadhurNeural", "rate": "+14%", "pitch": "+0Hz"}
+}
 
 
-async def generate_scene_audio(text, voice, output_path):
+async def generate_scene_audio(text, voice_conf, output_path):
     for attempt in range(3):
         try:
-            # Fast, crisp, high-energy news anchor cadence (+12% rate, +1Hz pitch)
-            communicate = edge_tts.Communicate(text, voice, rate="+12%", pitch="+1Hz")
+            communicate = edge_tts.Communicate(
+                text,
+                voice_conf["voice"],
+                rate=voice_conf["rate"],
+                pitch=voice_conf["pitch"]
+            )
             await communicate.save(str(output_path))
             return
         except Exception as e:
@@ -38,7 +45,7 @@ async def generate_scene_audio(text, voice, output_path):
                 raise e
 
 
-def create_voiceover(voice=DEFAULT_VOICE):
+def create_voiceover(gender_override=None):
     print("\n" + "="*55)
     print("🎙️ GENERATING AI NEWS ANCHOR VOICEOVER")
     print("="*55)
@@ -49,6 +56,14 @@ def create_voiceover(voice=DEFAULT_VOICE):
 
     with open(SCRIPT_FILE, "r", encoding="utf-8") as f:
         script_data = json.load(f)
+
+    # Determine Anchor Voice
+    gender = gender_override or script_data.get("voice_gender", "female").lower()
+    if gender not in VOICE_MAP:
+        gender = "female"
+    voice_conf = VOICE_MAP[gender]
+
+    print(f"  👩‍💼 Anchor Voice: {voice_conf['voice']} ({gender.upper()}) | Rate: {voice_conf['rate']}\n")
 
     scenes = script_data.get("scenes", [])
     if not scenes:
@@ -65,9 +80,8 @@ def create_voiceover(voice=DEFAULT_VOICE):
         temp_path = TEMP_DIR / f"scene_{idx}.mp3"
 
         print(f"  🔊 Generating Scene {idx+1}/{len(scenes)}: \"{caption_text}\"")
-        asyncio.run(generate_scene_audio(voice_text, voice, temp_path))
+        asyncio.run(generate_scene_audio(voice_text, voice_conf, temp_path))
 
-        # Get audio duration
         clip = AudioFileClip(str(temp_path))
         duration = clip.duration
         clip.close()
@@ -96,7 +110,6 @@ def create_voiceover(voice=DEFAULT_VOICE):
     for c in audio_clips:
         c.close()
 
-    # Save timings
     timing_data = {
         "total_duration": round(total_duration, 2),
         "scenes": timings
@@ -110,5 +123,5 @@ def create_voiceover(voice=DEFAULT_VOICE):
 
 
 if __name__ == "__main__":
-    v = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_VOICE
-    create_voiceover(v)
+    g = sys.argv[1] if len(sys.argv) > 1 else None
+    create_voiceover(g)
