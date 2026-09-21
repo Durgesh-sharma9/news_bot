@@ -3,7 +3,7 @@ import sys
 import json
 import requests
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Windows UTF-8 fix
 if hasattr(sys.stdout, 'reconfigure'):
@@ -78,28 +78,34 @@ def sync_card_to_web():
     # Clean out any trailing outro for web reading
     full_summary = full_summary.replace("ऐसी ही हर खबर के लिए देखते रहिए NEWS KID!", "").strip()
 
-    # Step 1: Upload Image to ImageKit CDN (or fallback)
+    # Step 1: Upload the Best Real News Photo to ImageKit CDN
     cdn_image_url = None
-    if IMAGE_FILE.exists():
-        print("  📸 Uploading News Photo to ImageKit CDN...")
+    images_dir = SCRIPT_DIR / "images"
+    candidates = sorted([images_dir / f"scene_{i}.jpg" for i in range(4)], key=lambda p: p.stat().st_size if p.exists() else 0, reverse=True)
+    best_img = candidates[0] if (candidates and candidates[0].exists() and candidates[0].stat().st_size > 35000) else IMAGE_FILE
+
+    if best_img and best_img.exists():
+        print(f"  📸 Uploading Real News Photo ({best_img.name}) to ImageKit CDN...")
         file_slug = f"news_{int(datetime.now().timestamp())}.jpg"
-        cdn_image_url = upload_to_imagekit(IMAGE_FILE, file_slug)
+        cdn_image_url = upload_to_imagekit(best_img, file_slug)
 
     if not cdn_image_url:
-        print("  ℹ️ Using local/placeholder image (ImageKit keys not yet configured)")
+        print("  ℹ️ Using fallback news photo")
         cdn_image_url = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1080&q=80"
     else:
-        print(f"  ✅ Image uploaded to ImageKit: {cdn_image_url}")
+        print(f"  ✅ Genuine News Photo uploaded to ImageKit: {cdn_image_url}")
 
-    # Build the Card Object
+    # Build the Card Object (Bilingual ready)
     card_doc = {
       "title": title,
+      "title_en": script_data.get("title_en", title),
       "summary": full_summary,
+      "summary_en": script_data.get("summary_en", full_summary),
       "category": category,
       "badge": badge,
       "imageUrl": cdn_image_url,
       "source": "NEWS KID Verified",
-      "publishedAt": datetime.utcnow().isoformat() + "Z",
+      "publishedAt": datetime.now(timezone.utc).isoformat(),
       "views": 1,
       "likes": 0
     }
