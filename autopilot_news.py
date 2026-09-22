@@ -139,6 +139,26 @@ def run_web_update(slot_time):
         res = subprocess.run(cmd, cwd=str(SCRIPT_DIR), capture_output=True, text=True, timeout=120)
         if res.returncode == 0:
             print(f"✅ Fast web update for {slot_time} completed!")
+            # Send Telegram alert with latest headline to user
+            try:
+                feed_path = SCRIPT_DIR / "web_feed.json"
+                if feed_path.exists():
+                    with open(feed_path, "r", encoding="utf-8") as f:
+                        cards = json.load(f)
+                        if cards and len(cards) > 0:
+                            top = cards[0]
+                            t_hi = top.get("title", "ताज़ा बड़ी खबर")
+                            cat = top.get("category", "breaking").upper()
+                            msg = (
+                                f"🌐 <b>NEWS KID Web Update Live ({slot_time})!</b>\n\n"
+                                f"📰 <b>{t_hi}</b>\n"
+                                f"🏷️ <i>श्रेणी: {cat}</i>\n"
+                                f"⚡ <i>60 शब्दों में लाइव कार्ड + AI स्टूडियो आवाज़</i>\n\n"
+                                f"👉 <b>वेब पोर्टल पर देखें:</b> https://newskid.devv.in"
+                            )
+                            notify_telegram(msg)
+            except Exception as te:
+                print(f"⚠️ Telegram notice error: {te}")
             return True
         else:
             print(f"⚠️ Fast web update notice: {res.stderr[-300:]}")
