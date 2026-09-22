@@ -90,21 +90,36 @@ def run_video_pipeline(slot_info):
         if res.returncode == 0:
             print("✅ Video slot completed successfully!")
             # Read last upload details
-            log_file = SCRIPT_DIR / "last_instagram_upload.json"
+            ig_log = SCRIPT_DIR / "last_instagram_upload.json"
+            yt_log = SCRIPT_DIR / "last_youtube_upload.json"
             reel_url = ""
-            if log_file.exists():
+            yt_url = ""
+            if ig_log.exists():
                 try:
-                    with open(log_file, "r", encoding="utf-8") as f:
+                    with open(ig_log, "r", encoding="utf-8") as f:
                         ld = json.load(f)
                         reel_url = ld.get("reel_url", "")
                 except Exception:
                     pass
-            notify_telegram(
+            if yt_log.exists():
+                try:
+                    with open(yt_log, "r", encoding="utf-8") as f:
+                        yd = json.load(f)
+                        yt_url = yd.get("video_url", "")
+                except Exception:
+                    pass
+
+            msg = (
                 f"🎉 <b>NEWS KID Video Published Successfully!</b>\n"
                 f"⏰ Slot: {display_time} ({category.upper()})\n"
-                f"📲 Instagram: {reel_url or '@news_kid_ig'}\n"
-                f"🌐 Web Portal: https://newskid.devv.in"
             )
+            if yt_url:
+                msg += f"📺 YouTube: {yt_url}\n"
+            if reel_url:
+                msg += f"📲 Instagram: {reel_url}\n"
+            msg += f"🌐 Web Portal: https://newskid.devv.in"
+
+            notify_telegram(msg)
             return True
         else:
             print(f"❌ Video generation returned non-zero code: {res.returncode}")

@@ -51,11 +51,21 @@ def main():
     # Step 5: Sync to Web Portal (Inshorts Card)
     run_step("Step 5: Publishing News Card to Web Portal", "sync_web.py")
 
-    # Step 6: Upload Reel to Instagram (@news_kid_ig)
+    # Step 6: Upload Short to YouTube
+    yt_token = SCRIPT_DIR / "youtube_token.json"
+    if yt_token.exists() and "--no-yt" not in sys.argv:
+        try:
+            run_step("Step 6: Uploading Short to YouTube", "step5_upload_youtube.py")
+        except Exception as e:
+            print(f"⚠️ YouTube upload warning: {e}")
+    else:
+        print("ℹ️ YouTube token not found or skipped. Skipping YouTube upload.")
+
+    # Step 7: Upload Reel to Instagram (@news_kid_ig)
     session_file = SCRIPT_DIR / "ig_session.json"
     if session_file.exists() and "--no-ig" not in sys.argv:
         try:
-            run_step("Step 6: Uploading Reel to Instagram (@news_kid_ig)", "step6_upload_instagram.py")
+            run_step("Step 7: Uploading Reel to Instagram (@news_kid_ig)", "step6_upload_instagram.py")
         except Exception as e:
             print(f"⚠️ Instagram upload warning: {e}")
 
